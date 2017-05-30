@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Chat API</title>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+            namespace = '/test';
+
+            socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port + namespace);
+
+            socket.on('connect', function() {
+                //socket.emit('my_event', {data: 'I\'m connected!'});
+                document.getElementById("myNav").style.width = "100%";
+            });
+
+            socket.on('rooms', function(msg) {
+                rooms_html=makeUL(msg.rooms,'navp');
+            });
+
+            socket.on('users', function(msg) {
+                $('#private_user').empty();
+                rooms_html=makeUL(msg.users,'users_ul',false);
+            });
+
+            socket.on('msg', function(msg) {
+                if(msg.type=='connection' )
+                {
+                    if(msg.response)
+                    {
+                        $('.textarea , .menu, .emojis').show();
+                        document.getElementById("myNav").style.width = "0%";
+                    }
+                    else
+                    {
+                        alert(msg.msg);
+                    }
+                }
+            });
+
+            socket.on('private_rpy', function(msg) {
+                var li = document.createElement("li");
+                $('#log_ul').append('<li><b>'+msg.from+' :</b> '+msg.reply+'</li>');
+            });
+
+            $('form#nickname').submit(function(event) {
+                socket.emit('nick_name', {name: $('#nick_name').val()});
+                user=$('#nick_name').val();
+                return false;
+            });
+
+            $('form#private').submit(function(event) {
+                socket.emit('private_msg', {msg: $('#private_msg').val(),to:$('#private_user').val()});
+                $('#log_ul').append('<li><b>To '+$('#private_user').val()+' :</b> '+$('#private_msg').val()+'</li>');
+                return false;
+            });
+
+            $('form#create').submit(function(event) {
+                socket.emit('join', {room: $('#create_room').val().toLowerCase(),user: user});
+                return false;
+            });
+
+            $('#navp').on('click', 'a.room_close', function(event){
+                console.log($(this).closest('li').find('a.room').text());
+                socket.emit('close_room', {room:$(this).closest('li').find('a.room').text()});
+            });
+
+        });
+
+        var socket;
+        var user;
+
+        function makeUL(array,id,type=true) {
+            var mainList = document.getElementById(id);
+            mainList.innerHTML='';
+
+            if(array.length<1)
+            {
+                var elem = document.createElement("li");
+                 elem.value='';
+                 elem.innerHTML='No Rooms';
+                 mainList.appendChild(elem);
+                 return;
+            }
+
+            var options = $("#private_user");
+
+            for(var i=0;i<array.length;i++){
+                    var item = array[i];
+                    var elem = document.createElement("li");
+                    elem.value=item;
+                    if(type)
+                        elem.innerHTML='<a class="room" href="/room/'+item+'" >'+item+'</a>&nbsp;&nbsp;<a class="room_close" href="javascript:void(0);">close</a>';
+                    else if(item!=user)
+                    {
+                        elem.innerHTML=item;
+                        options.append($("<option />").val(item).text(item));
+                    }
+
+                    if(item!=user)
+                        mainList.appendChild(elem);
+            }
+        }
+
+    </script>
+
+    <style type="text/css">
+        .overlay {height: 100%; width: 0; position: fixed; z-index: 1; top: 0; left: 0; background-color: rgb(0,0,0); background-color: rgba(0,0,0, 0.9); overflow-x: hidden; transition: 0.5s; }
+
+        .overlay-content {position: relative; top: 25%; width: 100%; text-align: center; margin-top: 30px; }
+
+        .overlay a {padding: 8px; text-decoration: none; font-size: 36px; color: #818181; display: block; transition: 0.3s; }
+
+        .overlay a:hover, .overlay a:focus {color: #f1f1f1; }
+
+        .overlay .closebtn {position: absolute; top: 20px; right: 45px; font-size: 60px; }
+
+        @media screen and (max-height: 450px) {
+          .overlay a {font-size: 20px}
+          .overlay .closebtn {font-size: 40px; top: 15px; right: 35px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="myNav" class="overlay">
+  <div class="overlay-content">
+    <form id="nickname" method="POST" action='#'>
+        <input type="text" name="nick_name" id="nick_name" placeholder="Nick Name" required>
+        <input type="submit" value="Submit">
+    </form>
+  </div>
+</div>
+    <h1>Chat API</h1>
+    <h2>Create New Room</h2>
+    <form id="create" method="POST" action='#'>
+        <input type="text" name="create_room" id="create_room" placeholder="Room Name">
+        <input type="submit" value="Create">
+    </form>
+    <h2>Rooms:</h2>
+
+    <div id="rooms_list">
+        <ul id="navp">
+        </ul>
+    </div>
+    <h2>Users:</h2>
+    <div id="users_list">
+        <ul id="users_ul">
+        </ul>
+    </div>
+
+    <h2>Send Private Message:</h2>
+    <form id="private" method="POST">
+        <input type="text" name="private_msg" id="private_msg" placeholder="Your Message" required>
+        <select id="private_user"></select>
+        <input type="submit" value="Submit">
+    </form>
+
+    <h2>Messages (Private Chat) :</h2>
+    <div id="log">
+        <ul id="log_ul">
+        </ul>
+    </div>
+</body>
+</html>
