@@ -7,7 +7,7 @@ Create a user interface that would use the API to allow users to communicate wit
 
 ## Steps to setup working environment
 1. Install Redis Server
-    - Ubuntu Command ```sudo apt install redis-server```
+    - Ubuntu Command ```sudo apt-get install redis-server```
     - Redis ```port 6379```
 2. Install Flask
     - ```pip install Flask```
