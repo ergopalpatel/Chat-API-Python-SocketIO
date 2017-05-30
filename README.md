@@ -21,14 +21,14 @@ Register using Nick Name (Unique)
 socket.emit('nick_name', {name: <UNIQUE-NAME> });
 ```
 
+### One to One (Private Chat)
+
 Get list of all Online Users
 ```
 socket.on('users', function(msg) {
   //msg.users (List of users)
 });
 ```
-
-### One to One (Private Chat)
 
 Send message to perticular user
 ```
